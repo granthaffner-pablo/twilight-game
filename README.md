@@ -7,7 +7,7 @@ A cozy, atmospheric pixel-art side-scroller where you walk along a twilight road
 
 ## Play It Live
 
-→ **[Play Twilight](https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/)** ←  
+→ **[Play Twilight](https://granthaffner-pablo.github.io/twilight-game/)** ←  
 (Replace YOUR_GITHUB_USERNAME and YOUR_REPO_NAME with your actual values after GitHub Pages is live)
 
 ## Controls
