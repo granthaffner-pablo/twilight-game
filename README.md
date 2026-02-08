@@ -3,12 +3,12 @@
 A cozy, atmospheric pixel-art side-scroller where you walk along a twilight road under changing moons, whistling to seagulls, dodging puddles, and discovering small secrets in a quiet, melancholic world.
 
 ![Game Screenshot](https://via.placeholder.com/640x360.png?text=Twilight+Game+Screenshot)  
-*(Replace this placeholder with an actual screenshot later – upload one to the repo and update the link)*
+*(Replace this placeholder with an actual screenshot later – upload one to the repo)*
 
 ## Play It Live
 
 → **[Play Twilight](https://granthaffner-pablo.github.io/twilight-game/)** ←  
-(Replace YOUR_GITHUB_USERNAME and YOUR_REPO_NAME with your actual values after GitHub Pages is live)
+
 
 ## Controls
 
