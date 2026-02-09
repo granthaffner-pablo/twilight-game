@@ -51,7 +51,7 @@ canvas {
 .dpad-container {
   position: absolute;
   left: max(15px, env(safe-area-inset-left, 15px));
-  bottom: max(80px, env(safe-area-inset-bottom, 80px));
+  bottom: max(120px, env(safe-area-inset-bottom, 120px));
   pointer-events: auto;
   display: grid;
   grid-template-columns: 60px 60px 60px;
@@ -121,7 +121,7 @@ canvas {
 .action-cluster {
   position: absolute;
   right: max(15px, env(safe-area-inset-right, 15px));
-  bottom: max(80px, env(safe-area-inset-bottom, 80px));
+  bottom: max(120px, env(safe-area-inset-bottom, 120px));
   pointer-events: auto;
   display: flex;
   flex-direction: column;
@@ -207,10 +207,13 @@ canvas {
     0 6px 20px rgba(255, 200, 100, 0.4);
 }
 
-/* Hide on desktop and non-touch devices */
+/* Hide on desktop and non-touch devices - AGGRESSIVE */
 @media (min-width: 769px) {
   .mobile-controls {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 }
 
@@ -218,13 +221,16 @@ canvas {
 @media (hover: hover) and (pointer: fine) {
   .mobile-controls {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 }
 
 /* Landscape mode optimization */
 @media (max-height: 500px) and (orientation: landscape) {
   .dpad-container, .action-cluster {
-    bottom: max(60px, env(safe-area-inset-bottom, 60px));
+    bottom: max(80px, env(safe-area-inset-bottom, 80px));
   }
   .dpad-btn {
     width: 50px;
@@ -287,13 +293,41 @@ ctx.imageSmoothingEnabled = false;
 
 const W = 320, H = 180;
 
+// ===== FORCE HIDE MOBILE CONTROLS ON DESKTOP =====
+(function() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+  const isSmallScreen = window.innerWidth <= 768;
+  
+  const mobileControls = document.querySelector('.mobile-controls');
+  if (mobileControls && (!isMobileDevice || !isSmallScreen)) {
+    mobileControls.style.display = 'none';
+    mobileControls.style.visibility = 'hidden';
+    mobileControls.style.opacity = '0';
+  }
+})();
+
 // ===== DYNAMIC CANVAS RESIZE (CRISP PIXELS, FULLSCREEN ON DESKTOP/MOBILE) =====
 function resizeCanvas() {
-  // Better mobile detection: Check for touch capability AND screen size
-  // This works correctly in iframes by detecting actual device capabilities
+  // Multi-factor mobile detection for iframe compatibility
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
   const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const isSmallScreen = window.innerWidth <= 768; // Standard mobile breakpoint
-  const isMobile = hasTouch && isSmallScreen;
+  const isSmallScreen = window.innerWidth <= 768;
+  
+  // Mobile ONLY if: mobile device OR (has touch AND small screen)
+  // Desktop if: large screen AND (no touch OR desktop user agent)
+  const isMobile = isMobileDevice || (hasTouch && isSmallScreen);
+  
+  // Hide mobile controls on desktop
+  const mobileControls = document.querySelector('.mobile-controls');
+  if (mobileControls) {
+    if (!isMobile || window.innerWidth > 768) {
+      mobileControls.style.display = 'none';
+    } else {
+      mobileControls.style.display = 'flex';
+    }
+  }
   
   const isFullscreen = !!(
     document.fullscreenElement ||
