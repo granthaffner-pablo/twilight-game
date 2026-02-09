@@ -207,8 +207,15 @@ canvas {
     0 6px 20px rgba(255, 200, 100, 0.4);
 }
 
-/* Hide on desktop */
-@media (min-width: 1025px) {
+/* Hide on desktop and non-touch devices */
+@media (min-width: 769px) {
+  .mobile-controls {
+    display: none !important;
+  }
+}
+
+/* Also hide on any hover-capable device (desktop) */
+@media (hover: hover) and (pointer: fine) {
   .mobile-controls {
     display: none !important;
   }
@@ -282,7 +289,12 @@ const W = 320, H = 180;
 
 // ===== DYNAMIC CANVAS RESIZE (CRISP PIXELS, FULLSCREEN ON DESKTOP/MOBILE) =====
 function resizeCanvas() {
-  const isMobile = window.innerWidth <= 1024;
+  // Better mobile detection: Check for touch capability AND screen size
+  // This works correctly in iframes by detecting actual device capabilities
+  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const isSmallScreen = window.innerWidth <= 768; // Standard mobile breakpoint
+  const isMobile = hasTouch && isSmallScreen;
+  
   const isFullscreen = !!(
     document.fullscreenElement ||
     document.webkitFullscreenElement ||
