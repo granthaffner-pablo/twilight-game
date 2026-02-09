@@ -7,22 +7,31 @@
 <style>
 body {
   margin: 0;
+  padding: 0;
   background: #000;
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 100vh;
   height: 100vh;
+  width: 100vw;
   overflow: hidden;
   touch-action: none;
   font-family: monospace;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 canvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   image-rendering: -moz-crisp-edges;
   image-rendering: optimize-contrast;
+  display: block;
+  margin: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   /* JS will set width/height dynamically */
 }
 
@@ -42,7 +51,7 @@ canvas {
 .dpad-container {
   position: absolute;
   left: max(15px, env(safe-area-inset-left, 15px));
-  bottom: max(15px, env(safe-area-inset-bottom, 15px));
+  bottom: max(80px, env(safe-area-inset-bottom, 80px));
   pointer-events: auto;
   display: grid;
   grid-template-columns: 60px 60px 60px;
@@ -112,7 +121,7 @@ canvas {
 .action-cluster {
   position: absolute;
   right: max(15px, env(safe-area-inset-right, 15px));
-  bottom: max(15px, env(safe-area-inset-bottom, 15px));
+  bottom: max(80px, env(safe-area-inset-bottom, 80px));
   pointer-events: auto;
   display: flex;
   flex-direction: column;
@@ -208,7 +217,7 @@ canvas {
 /* Landscape mode optimization */
 @media (max-height: 500px) and (orientation: landscape) {
   .dpad-container, .action-cluster {
-    bottom: max(10px, env(safe-area-inset-bottom, 10px));
+    bottom: max(60px, env(safe-area-inset-bottom, 60px));
   }
   .dpad-btn {
     width: 50px;
