@@ -207,6 +207,46 @@ canvas {
     0 6px 20px rgba(255, 200, 100, 0.4);
 }
 
+/* ===== MOBILE LAYOUT: controls strip flows BELOW the canvas ===== */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  body {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  canvas {
+    flex-shrink: 0;
+    /* JS will set width/height; CSS caps the display size so controls always fit below */
+    max-height: calc(100dvh - 155px) !important;
+    max-width: 100vw !important;
+  }
+
+  /* Controls become a relative strip at the bottom, not a full-screen overlay */
+  .mobile-controls {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100vw;
+    height: 155px;
+    flex-shrink: 0;
+    background: transparent;
+  }
+
+  /* Re-anchor buttons inside the relative strip */
+  .dpad-container {
+    bottom: 10px;
+    left: max(15px, env(safe-area-inset-left, 15px));
+  }
+
+  .action-cluster {
+    bottom: 10px;
+    right: max(15px, env(safe-area-inset-right, 15px));
+  }
+}
+
 /* Hide on desktop and non-touch devices - AGGRESSIVE */
 @media (min-width: 769px) {
   .mobile-controls {
@@ -229,8 +269,14 @@ canvas {
 
 /* Landscape mode optimization */
 @media (max-height: 500px) and (orientation: landscape) {
+  canvas {
+    max-height: calc(100dvh - 110px) !important;
+  }
+  .mobile-controls {
+    height: 110px;
+  }
   .dpad-container, .action-cluster {
-    bottom: max(80px, env(safe-area-inset-bottom, 80px));
+    bottom: 6px;
   }
   .dpad-btn {
     width: 50px;
@@ -240,7 +286,7 @@ canvas {
   .action-btn {
     width: 54px;
     height: 54px;
-    font-size: 24px; /* Direct emoji size */
+    font-size: 24px;
   }
   .action-btn .label {
     font-size: 9px;
@@ -257,7 +303,7 @@ canvas {
   .action-btn {
     width: 58px;
     height: 58px;
-    font-size: 24px; /* Direct emoji size */
+    font-size: 24px;
   }
 }
 </style>
@@ -336,8 +382,11 @@ function resizeCanvas() {
   );
   
   if (isMobile || isFullscreen) {
+    // Reserve space for the mobile controls strip so it never overlaps the canvas
+    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 110 : 155) : 0;
+    const availableHeight = window.innerHeight - controlsHeight;
     const scaleX = window.innerWidth / W;
-    const scaleY = window.innerHeight / H;
+    const scaleY = availableHeight / H;
     const scale = Math.floor(Math.min(scaleX, scaleY, 8));
     canvas.style.width = `${W * scale}px`;
     canvas.style.height = `${H * scale}px`;
@@ -347,7 +396,13 @@ function resizeCanvas() {
     canvas.style.height = `${H * FIXED_SCALE}px`;
   }
   canvas.style.maxWidth = '100vw';
-  canvas.style.maxHeight = '100vh';
+  // On mobile, cap canvas height so it never reaches into the controls strip
+  if (isMobile) {
+    const controlsHeight = window.innerHeight < 500 ? 110 : 155;
+    canvas.style.maxHeight = `calc(100dvh - ${controlsHeight}px)`;
+  } else {
+    canvas.style.maxHeight = '100vh';
+  }
 }
 
 window.addEventListener('resize', resizeCanvas);
