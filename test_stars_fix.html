@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stars Fix Test</title>
+</head>
+<body>
+    <h1>Stars Restart Bug Fix Test</h1>
+    <p>Test the fix by:</p>
+    <ol>
+        <li><a href="index.html">Open the game</a></li>
+        <li>Play through to the ending (walk to the dock end)</li>
+        <li>Wait for the ending sequence to complete</li>
+        <li>When the hint screen appears, wait for it to fade and restart the game</li>
+        <li>Verify that no shooting stars are visible at the start of the new game</li>
+    </ol>
+    
+    <h2>What was fixed:</h2>
+    <ul>
+        <li>Added <code>shootingStars.length = 0;</code> to <code>cleanupAllParticles()</code></li>
+        <li>Added <code>shootingStars.length = 0;</code> to <code>HintScreen.resetGame()</code></li>
+        <li>This prevents ending stars from persisting when the game restarts</li>
+    </ul>
+    
+    <p><a href="index.html">Test Now</a></p>
+</body>
+</html>

@@ -963,9 +963,16 @@ const PARTICLE_LIMITS = {
   rainDrops: 500
 };
 
-// Centralized particle cleanup function
+// Centralized particle cleanup function with enhanced safety
 function cleanupParticles(particleArray, maxLimit, arrayName) {
-  if (!particleArray || particleArray.length <= maxLimit) return;
+  if (!particleArray || !Array.isArray(particleArray)) {
+    if (DEBUG && particleArray !== undefined) {
+      console.warn(`⚠️ Invalid particle array for ${arrayName}:`, particleArray);
+    }
+    return;
+  }
+  
+  if (particleArray.length <= maxLimit) return;
   
   const excess = particleArray.length - maxLimit;
   if (DEBUG && excess > 0) {
@@ -974,6 +981,135 @@ function cleanupParticles(particleArray, maxLimit, arrayName) {
   
   // Remove oldest particles from the beginning
   particleArray.splice(0, excess);
+}
+
+// Comprehensive particle cleanup for all systems
+function cleanupAllParticles() {
+  if (DEBUG) console.log('🧹 Cleaning up all particle systems...');
+  
+  // Clean all known particle arrays with their limits
+  cleanupParticles(titleParticles, PARTICLE_LIMITS.titleParticles, 'titleParticles');
+  cleanupParticles(driftParticles, PARTICLE_LIMITS.driftParticles, 'driftParticles');
+  cleanupParticles(lampParticles, PARTICLE_LIMITS.lampParticles, 'lampParticles');
+  cleanupParticles(dockLampSparkles, PARTICLE_LIMITS.dockLampSparkles, 'dockLampSparkles');
+  cleanupParticles(ufoSparkles, PARTICLE_LIMITS.ufoSparkles, 'ufoSparkles');
+  cleanupParticles(rainDrops, PARTICLE_LIMITS.rainDrops, 'rainDrops');
+  cleanupParticles(playerShootingStars, 10, 'playerShootingStars'); // Small limit for cinematic stars
+  cleanupParticles(splashes, 100, 'splashes');
+  cleanupParticles(sidewalkSplashes, 100, 'sidewalkSplashes');
+  cleanupParticles(pawprints, 50, 'pawprints');
+  cleanupParticles(moths, 20, 'moths');
+  cleanupParticles(fireflies, 30, 'fireflies');
+  
+  // Clear puddle pixels and other static arrays
+  if (puddlePixels.length > 0) {
+    puddlePixels.length = 0;
+  }
+  // Note: puddlePixelCount is a constant, so we don't reset it
+  
+  // Clear shooting stars to prevent ending stars from appearing at game start
+  if (shootingStars.length > 0) {
+    shootingStars.length = 0;
+  }
+  
+  // Clear background stars to prevent twilight stars from persisting after restart
+  if (stars.length > 0) {
+    stars.length = 0;
+  }
+}
+
+// ===== GRAPHICS RESOURCE MANAGEMENT =====
+let cachedGradients = new Map(); // Cache for dynamic gradients
+let maxCacheSize = 50; // Limit cache size to prevent memory bloat
+
+// Helper to get or create cached gradient
+function getCachedGradient(key, createFn) {
+  if (cachedGradients.has(key)) {
+    return cachedGradients.get(key);
+  }
+  
+  const gradient = createFn();
+  
+  // Implement LRU cache cleanup if size limit exceeded
+  if (cachedGradients.size >= maxCacheSize) {
+    const firstKey = cachedGradients.keys().next().value;
+    cachedGradients.delete(firstKey);
+    if (DEBUG) console.log('🗑️ Evicted oldest gradient from cache');
+  }
+  
+  cachedGradients.set(key, gradient);
+  return gradient;
+}
+
+// Clear all cached graphics resources
+function cleanupGraphicsResources() {
+  if (DEBUG) console.log('🧹 Cleaning up graphics resources...');
+  
+  // Clear gradient cache
+  cachedGradients.clear();
+  
+  // Clear fence pattern if it exists
+  if (cachedFencePattern) {
+    cachedFencePattern = null;
+  }
+  
+  // Reset cached gradient variables
+  cachedTwilightGradient = null;
+  cachedHorizonGradient = null;
+  
+  if (DEBUG) console.log('✨ Graphics resources cleaned up');
+}
+
+// ===== AUDIO RESOURCE CLEANUP =====
+let activeAudioNodes = new Set(); // Track all active audio nodes for cleanup
+
+// Helper to track audio nodes for cleanup
+function trackAudioNode(node) {
+  if (node && typeof node.connect === 'function') {
+    activeAudioNodes.add(node);
+  }
+  return node;
+}
+
+// Clean up all audio nodes and reset audio system
+function cleanupAudioSystem() {
+  if (DEBUG) console.log('🧹 Cleaning up audio system...');
+  
+  // Stop and disconnect rain audio
+  if (rainAmbientSource) {
+    try {
+      rainAmbientSource.stop();
+      rainAmbientSource.disconnect();
+    } catch (e) {
+      // Source might already be stopped
+    }
+    rainAmbientSource = null;
+  }
+  
+  if (rainLPF) {
+    rainLPF.disconnect();
+    rainLPF = null;
+  }
+  
+  if (rainGain) {
+    rainGain.disconnect();
+    rainGain = null;
+  }
+  
+  // Clean up all tracked audio nodes
+  activeAudioNodes.forEach(node => {
+    try {
+      if (node.stop) node.stop();
+      if (node.disconnect) node.disconnect();
+    } catch (e) {
+      // Node might already be cleaned up
+    }
+  });
+  activeAudioNodes.clear();
+  
+  // Don't close AudioContext as it would break browser audio
+  // Just reset the promise to allow re-initialization
+  audioContextPromise = null;
 }
 
 // ===== CENTRALIZED AUDIO CONTEXT MANAGEMENT =====
@@ -1063,20 +1199,20 @@ function initRainAudio() {
     b6 = white * 0.115926;
   }
 
-  rainAmbientSource = audioCtx.createBufferSource();
+  rainAmbientSource = trackAudioNode(audioCtx.createBufferSource());
   rainAmbientSource.buffer = buffer;
   rainAmbientSource.loop = true;
   rainAmbientSource.loopStart = 0;
   rainAmbientSource.loopEnd = buffer.duration;
 
   // Heavy low-pass filter: MUFFLED/soothing (400-800Hz range)
-  rainLPF = audioCtx.createBiquadFilter();
+  rainLPF = trackAudioNode(audioCtx.createBiquadFilter());
   rainLPF.type = 'lowpass';
   rainLPF.frequency.value = 600; // Soft/muffled rain wash
   rainLPF.Q.value = 0.7; // Gentle rolloff
 
   // Master gain for smooth intensity control
-  rainGain = audioCtx.createGain();
+  rainGain = trackAudioNode(audioCtx.createGain());
   rainGain.gain.value = 0; // Start silent
 
   // Connect: source -> LPF -> gain -> speakers
@@ -1102,17 +1238,17 @@ function initRainAudio() {
 function playRainDrop(intensity) {
   if (!sharedAudioContext || !whiteNoiseBuffer) return;
 
-  const source = sharedAudioContext.createBufferSource();
+  const source = trackAudioNode(sharedAudioContext.createBufferSource());
   source.buffer = whiteNoiseBuffer;
 
   // Per-drop LPF: Less muffled (400-900Hz) = clearer "tap" sounds
-  const dropLPF = sharedAudioContext.createBiquadFilter();
+  const dropLPF = trackAudioNode(sharedAudioContext.createBiquadFilter());
   dropLPF.type = 'lowpass';
   dropLPF.frequency.value = 400 + Math.random() * 500; // Higher range = more audible sparkle
   dropLPF.Q.value = 0.6; // Slightly sharper
 
   // BOOSTED Soft envelope: Quick attack, medium decay (doubled peak volume)
-  const dropGain = sharedAudioContext.createGain();
+  const dropGain = trackAudioNode(sharedAudioContext.createGain());
   const now = sharedAudioContext.currentTime;
   dropGain.gain.setValueAtTime(0, now);
   dropGain.gain.linearRampToValueAtTime(0.08 * intensity * masterRainVol, now + 0.005); // Apply master volume
@@ -1201,8 +1337,8 @@ function playWhistle(pitchMult = 1.0) {
     // console.log(`Whistle played! Pitch multiplier: ${pitchMult}`);
   const audioCtx = getAudioCtxSync(); // Use centralized AudioContext
   
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
+  const osc = trackAudioNode(audioCtx.createOscillator());
+  const gain = trackAudioNode(audioCtx.createGain());
   
   // Random note from a pleasant scale (pentatonic-ish)
   const notes = [523.25, 587.33, 659.25, 783.99, 880.00]; // C5, D5, E5, G5, A5
@@ -2175,6 +2311,8 @@ class HintScreen {
     fullMoonSmileTimer = 0;
     fullMoonSmileFrame = 0;
     playerShootingStars = [];
+    shootingStars.length = 0; // Clear shooting stars to prevent ending stars from appearing at game start
+    stars.length = 0; // Clear background stars to prevent twilight stars from persisting after restart
     rainLevel = 0;
     rainTarget = 0;
     rainIntensity = 0; // Reset smooth rain
@@ -5372,13 +5510,17 @@ function drawPuddleReflections() {
       // 2. Bright center glow (intense blue flash)
       if (puddleReverieTimer > 240) {
         const glowIntensity = 0.5 + 0.3 * Math.sin(puddleReverieWavePhase * 2);
-        const glowGrad = ctx.createRadialGradient(
-          puddleCenterX, puddleCenterY, 0,
-          puddleCenterX, puddleCenterY, puddle.w * 0.6
-        );
-        glowGrad.addColorStop(0, `hsla(${blueHue}, 90%, 75%, ${glowIntensity * 0.6})`);
-        glowGrad.addColorStop(0.5, `hsla(${blueHue}, 80%, 60%, ${glowIntensity * 0.3})`);
-        glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        const glowKey = `puddle_${puddleCenterX}_${puddleCenterY}_${puddle.w}_${Math.floor(glowIntensity * 100)}`;
+        const glowGrad = getCachedGradient(glowKey, () => {
+          const grad = ctx.createRadialGradient(
+            puddleCenterX, puddleCenterY, 0,
+            puddleCenterX, puddleCenterY, puddle.w * 0.6
+          );
+          grad.addColorStop(0, `hsla(${blueHue}, 90%, 75%, ${glowIntensity * 0.6})`);
+          grad.addColorStop(0.5, `hsla(${blueHue}, 80%, 60%, ${glowIntensity * 0.3})`);
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          return grad;
+        });
         
         ctx.fillStyle = glowGrad;
         ctx.fillRect(puddleScreenX, puddleScreenY, puddle.w, puddle.h);
@@ -6326,7 +6468,6 @@ function draw() {
   // Phase mood tint + subtle vignette (drawn last to cover everything)
   if (moodTintActive && moodTintColor.a > 0) {
     if (DEBUG) console.log(`Debug: Drawing mood tint - active=${moodTintActive}, alpha=${moodTintColor.a}, hue=${moodTintColor.h}`);
-    
     // Soft global tint
     ctx.fillStyle = `hsla(${moodTintColor.h}, ${moodTintColor.s}%, ${moodTintColor.l}%, ${moodTintColor.a})`;
     ctx.fillRect(0, 0, W, H);
@@ -6334,9 +6475,13 @@ function draw() {
     // Fluorescent vignette — edges glow with tint color
     if (!CACHED_GRADIENTS) initGradients();
     // Create dynamic vignette using cached base as template
-    const vignetteGradient = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)/1.2);
-    vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)');
-    vignetteGradient.addColorStop(1, `hsla(${moodTintColor.h}, ${moodTintColor.s * 0.8}%, ${moodTintColor.l * 0.4}%, ${moodVignetteStrength})`);
+    const vignetteKey = `vignette_${moodTintColor.h}_${moodTintColor.s}_${moodTintColor.l}_${moodVignetteStrength}`;
+    const vignetteGradient = getCachedGradient(vignetteKey, () => {
+      const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)/1.2);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, `hsla(${moodTintColor.h}, ${moodTintColor.s * 0.8}%, ${moodTintColor.l * 0.4}%, ${moodVignetteStrength})`);
+      return grad;
+    });
     ctx.fillStyle = vignetteGradient;
     ctx.fillRect(0, 0, W, H);
   } else if (moodTintActive) {
@@ -6430,6 +6575,15 @@ function resetToGameStart() {
   playerShootingStars = [];
   shellPileCount = 0;
   dockLampSparkles = [];
+
+  // Clear audio system for clean restart
+  cleanupAudioSystem();
+
+  // Clear all particle systems
+  cleanupAllParticles();
+  
+  // Clear graphics resources
+  cleanupGraphicsResources();
   
   // Reset other game state variables
   whistling = false;

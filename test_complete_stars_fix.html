@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Stars Fix Test</title>
+</head>
+<body>
+    <h1>Complete Stars Restart Bug Fix</h1>
+    <p>Both shooting stars and background stars should now be properly cleared on restart.</p>
+    
+    <h2>Test Instructions:</h2>
+    <ol>
+        <li><a href="index.html">Open the game</a></li>
+        <li>Play through to the ending (walk to the dock end)</li>
+        <li>Wait for the ending sequence to complete</li>
+        <li>When the hint screen appears, wait for it to fade and restart the game</li>
+        <li>Verify that NO stars (shooting or background) are visible at the start of the new game</li>
+        <li>Play normally and confirm stars appear correctly as twilight progresses</li>
+    </ol>
+    
+    <h2>What was fixed:</h2>
+    <ul>
+        <li><strong>Shooting Stars:</strong> Added <code>shootingStars.length = 0;</code> to cleanup functions</li>
+        <li><strong>Background Stars:</strong> Added <code>stars.length = 0;</code> to cleanup functions</li>
+        <li><strong>Both functions updated:</strong> <code>cleanupAllParticles()</code> and <code>HintScreen.resetGame()</code></li>
+    </ul>
+    
+    <h2>Expected behavior:</h2>
+    <ul>
+        <li>✅ No stars visible immediately after game restart</li>
+        <li>✅ Background stars gradually appear as twilight progresses (twilight > 0.4)</li>
+        <li>✅ Shooting stars appear randomly during gameplay</li>
+        <li>✅ Both star types appear normally during ending sequence</li>
+    </ul>
+    
+    <p><a href="index.html">Test Now</a></p>
+</body>
+</html>
