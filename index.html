@@ -347,6 +347,11 @@ function resizeCanvas() {
   );
   
   if (isMobile || isFullscreen) {
+    // Calculate available height accounting for mobile controls
+    const mobileControls = document.querySelector('.mobile-controls');
+    const controlsHeight = mobileControls && mobileControls.style.display !== 'none' ? 195 : 0; // Match CSS: 175px + 20px margin
+    const availableHeight = window.innerHeight - controlsHeight;
+    
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
     const scale = Math.floor(Math.min(scaleX, scaleY, 8));
@@ -923,6 +928,76 @@ let rainTarget = 0;
 let rainIntensity = 0;   // smoothed 0–1
 let rainDrops = [];
 
+// ===== PARTICLE SYSTEM LIMITS (MEMORY MANAGEMENT) =====
+const PARTICLE_LIMITS = {
+  titleParticles: 500,
+  driftParticles: 200,
+  lampParticles: 300,
+  dockLampSparkles: 150,
+  ufoSparkles: 100,
+  rainDrops: 500
+};
+
+// Centralized particle cleanup function
+function cleanupParticles(particleArray, maxLimit, arrayName) {
+  if (!particleArray || particleArray.length <= maxLimit) return;
+  
+  const excess = particleArray.length - maxLimit;
+  if (DEBUG && excess > 0) {
+    console.log(`🧹 Cleaning up ${excess} excess ${arrayName} particles (${particleArray.length} → ${maxLimit})`);
+  }
+  
+  // Remove oldest particles from the beginning
+  particleArray.splice(0, excess);
+}
+
+// ===== CENTRALIZED AUDIO CONTEXT MANAGEMENT =====
+let sharedAudioContext = null;
+let audioContextPromise = null;
+
+// Centralized AudioContext getter with proper synchronization
+function getAudioContext() {
+  if (audioContextPromise) {
+    return audioContextPromise;
+  }
+  
+  audioContextPromise = new Promise((resolve, reject) => {
+    try {
+      if (!sharedAudioContext) {
+        sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        window.audioCtx = sharedAudioContext; // Maintain backward compatibility
+      }
+      
+      // Resume if suspended (browser requirement)
+      if (sharedAudioContext.state === 'suspended') {
+        sharedAudioContext.resume().then(() => {
+          if (DEBUG) console.log('🔊 AudioContext resumed successfully');
+          resolve(sharedAudioContext);
+        }).catch(reject);
+      } else {
+        resolve(sharedAudioContext);
+      }
+    } catch (error) {
+      if (DEBUG) console.error('🔇 AudioContext creation failed:', error);
+      reject(error);
+    }
+  });
+  
+  return audioContextPromise;
+}
+
+// Legacy sync accessor for functions that need immediate access
+function getAudioCtxSync() {
+  if (!sharedAudioContext) {
+    sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    window.audioCtx = sharedAudioContext;
+  }
+  if (sharedAudioContext.state === 'suspended') {
+    sharedAudioContext.resume();
+  }
+  return sharedAudioContext;
+}
+
 // ===== RAIN AUDIO SYSTEM =====
 let audioCtx = null;
 let rainAmbientSource = null;
@@ -935,11 +1010,13 @@ let lastRainUpdate = 0;
 let masterRainVol = 1.0;
 
 function initRainAudio() {
-  if (audioCtx) return; // Already initialized
+  if (rainAmbientSource) return; // Already initialized
+
+  // Use centralized AudioContext
+  getAudioCtxSync(); // Ensure context exists
+  const audioCtx = sharedAudioContext;
 
   // if (DEBUG) console.log('🌧️ Initializing rain audio system...');
-  audioCtx = window.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
   // if (DEBUG) console.log(`🌧️ AudioContext state: ${audioCtx.state}`);
 
   // ===== SEAMLESS AMBIENT PINK NOISE (10s loop - imperceptible cycles) =====
@@ -1098,14 +1175,7 @@ let fadingToGame = false;
 
 function playWhistle(pitchMult = 1.0) {
     // console.log(`Whistle played! Pitch multiplier: ${pitchMult}`);
-  const audioCtx = window.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-  window.audioCtx = audioCtx;
-  
-  // Resume AudioContext if suspended (browser security)
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-    // console.log('AudioContext resumed for whistle');
-  }
+  const audioCtx = getAudioCtxSync(); // Use centralized AudioContext
   
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -1217,6 +1287,9 @@ let dockLampSparkles = [];
 let shellPileCount = 0;
 
 function updateDockLampSparkles() {
+    // Clean up excess sparkles before updating
+    cleanupParticles(dockLampSparkles, PARTICLE_LIMITS.dockLampSparkles, 'dockLampSparkles');
+    
     // Calculate sparkle spawn rate
     let sparkleChance = 0.3; // Default rate
     
@@ -1387,6 +1460,9 @@ function createLampParticles(lamps) {
 
 // Update & draw loop
 function updateLampParticles(nightFactor) {
+  // Clean up excess lamp particles before updating
+  cleanupParticles(lampParticles, PARTICLE_LIMITS.lampParticles, 'lampParticles');
+  
   lampParticles.forEach(p => p.update(nightFactor));
 }
 
@@ -2195,33 +2271,21 @@ function drawEndScreen() {
   // 9️⃣ Draw title particles (if initialized)
   drawTitleParticles();
   
-  // 🔟 Add subtle noise
+  // Add subtle noise
   drawNoise();
 }
 
 canvas.addEventListener("click", function() {
-  // Activate AudioContext on first click (browser requirement)
-  if (!window.audioCtx) {
-    window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // console.log('AudioContext activated on click');
-  }
-  if (window.audioCtx.state === 'suspended') {
-    window.audioCtx.resume();
-    if (DEBUG) console.log('AudioContext resumed');
-  }
+  // Activate AudioContext on first click using centralized system
+  getAudioCtxSync();
+  if (DEBUG) console.log('AudioContext activated on click');
 });
 
 canvas.addEventListener("touchstart", function(e) {
   e.preventDefault(); // Prevent scrolling on mobile
-  // Activate AudioContext on first touch
-  if (!window.audioCtx) {
-    window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // console.log('AudioContext activated on touch');
-  }
-  if (window.audioCtx.state === 'suspended') {
-    window.audioCtx.resume();
-    if (DEBUG) console.log('AudioContext resumed');
-  }
+  // Activate AudioContext on first touch using centralized system
+  getAudioCtxSync();
+  if (DEBUG) console.log('AudioContext activated on touch');
 });
 
 
@@ -2336,6 +2400,10 @@ function initTitleParticles() {
 
 // Draw and update particles each frame
 function drawTitleParticles() {
+    // Clean up excess particles before updating
+    cleanupParticles(titleParticles, PARTICLE_LIMITS.titleParticles, 'titleParticles');
+    cleanupParticles(driftParticles, PARTICLE_LIMITS.driftParticles, 'driftParticles');
+    
         // Debug: Log particle count and hint state (only every 60 frames to prevent spam)
     if (titleAnimated && titleParticles.length > 0 && Math.random() < 0.017) { // ~1/60 chance
         if (DEBUG) console.log(`🌟 Drawing ${titleParticles.length} title particles, ${driftParticles.length} drift particles`);
@@ -2573,6 +2641,9 @@ function spawnPlayerShootingStar() {
 // 🖤 Green Sparkle Beam (Tiny, Fleeting)
 
 function updateUfoSparkles() {
+    // Clean up excess UFO sparkles before updating
+    cleanupParticles(ufoSparkles, PARTICLE_LIMITS.ufoSparkles, 'ufoSparkles');
+    
     for (let i = ufoSparkles.length - 1; i >= 0; i--) {
         const sparkle = ufoSparkles[i];
         sparkle.y += sparkle.vy;
@@ -4615,9 +4686,12 @@ function update(dt = 1/60) {
   // Update rain audio system
   updateRainAudio(rainIntensity, dt);
 
-  // 🌧️ Continuous rain spawning (NOT event-based)
+  // Continuous rain spawning (NOT event-based)
   const spawnRate = Math.floor(rainIntensity * 6);
   if (spawnRate > 0) {
+    // Clean up excess rain drops before spawning new ones
+    cleanupParticles(rainDrops, PARTICLE_LIMITS.rainDrops, 'rainDrops');
+    
     // Pre-calculate shared values
     const baseSpeed = 2 + rainIntensity * 4;
     const baseAlpha = 0.3 + rainIntensity * 0.4;
