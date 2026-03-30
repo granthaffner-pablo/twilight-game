@@ -348,11 +348,7 @@ function resizeCanvas() {
   
   if (isMobile || isFullscreen) {
     // Reserve space for the mobile controls strip so it never overlaps the canvas
-<<<<<<<<< Temporary merge branch 1
-    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 110 : 155) : 0;
-=========
     const controlsHeight = isMobile ? (window.innerHeight < 500 ? 130 : 195) : 0;
->>>>>>>>> Temporary merge branch 2
     const availableHeight = window.innerHeight - controlsHeight;
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
