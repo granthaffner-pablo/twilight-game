@@ -37,21 +37,32 @@ canvas {
 
 /* ===== MOBILE CONTROLS - RETRO GAMEPAD LAYOUT ===== */
 .mobile-controls {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: relative;
+  top: auto;
+  left: auto;
   width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 100;
-  display: flex;
+  height: var(--mobile-controls-height);
+  margin-top: var(--mobile-controls-margin);
+  pointer-events: auto;
+  z-index: 10;
+  display: none;
+  flex-shrink: 0;
+  background: linear-gradient(to bottom, rgba(10, 15, 30, 0.1) 0%, rgba(10, 15, 30, 0.3) 100%);
+  border-top: 2px solid rgba(120, 150, 255, 0.3);
+}
+
+/* CSS custom properties for consistent height calculations */
+:root {
+  --mobile-controls-height: 175px;
+  --mobile-controls-margin: 20px;
+  --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
 }
 
 /* Left Side: D-Pad Style Movement */
 .dpad-container {
   position: absolute;
   left: max(15px, env(safe-area-inset-left, 15px));
-  bottom: max(120px, env(safe-area-inset-bottom, 120px));
+  bottom: 15px;
   pointer-events: auto;
   display: grid;
   grid-template-columns: 60px 60px 60px;
@@ -121,7 +132,7 @@ canvas {
 .action-cluster {
   position: absolute;
   right: max(15px, env(safe-area-inset-right, 15px));
-  bottom: max(120px, env(safe-area-inset-bottom, 120px));
+  bottom: 15px;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
@@ -220,29 +231,34 @@ canvas {
   canvas {
     flex-shrink: 0;
     /* JS will set width/height; CSS caps the display size so controls always fit below */
-    max-height: calc(100dvh - 155px) !important;
+    max-height: calc(100dvh - var(--mobile-controls-total-height)) !important;
     max-width: 100vw !important;
+    margin-bottom: 0;
   }
 
   /* Controls become a relative strip at the bottom, not a full-screen overlay */
   .mobile-controls {
+    display: flex;
     position: relative;
     top: auto;
     left: auto;
     width: 100vw;
-    height: 155px;
+    height: var(--mobile-controls-height);
     flex-shrink: 0;
-    background: transparent;
+    background: linear-gradient(to bottom, transparent 0%, rgba(10, 15, 30, 0.3) 100%);
+    border-top: 1px solid rgba(120, 150, 255, 0.2);
   }
 
   /* Re-anchor buttons inside the relative strip */
   .dpad-container {
-    bottom: 10px;
+    position: absolute;
+    bottom: 15px;
     left: max(15px, env(safe-area-inset-left, 15px));
   }
 
   .action-cluster {
-    bottom: 10px;
+    position: absolute;
+    bottom: 15px;
     right: max(15px, env(safe-area-inset-right, 15px));
   }
 }
@@ -270,7 +286,7 @@ canvas {
 /* Landscape mode optimization */
 @media (max-height: 500px) and (orientation: landscape) {
   canvas {
-    max-height: calc(100dvh - 110px) !important;
+    max-height: calc(100dvh - 130px) !important;
   }
   .mobile-controls {
     height: 110px;
@@ -383,7 +399,7 @@ function resizeCanvas() {
   
   if (isMobile || isFullscreen) {
     // Reserve space for the mobile controls strip so it never overlaps the canvas
-    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 110 : 155) : 0;
+    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 130 : 195) : 0;
     const availableHeight = window.innerHeight - controlsHeight;
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
@@ -398,7 +414,7 @@ function resizeCanvas() {
   canvas.style.maxWidth = '100vw';
   // On mobile, cap canvas height so it never reaches into the controls strip
   if (isMobile) {
-    const controlsHeight = window.innerHeight < 500 ? 110 : 155;
+    const controlsHeight = window.innerHeight < 500 ? 130 : 195;
     canvas.style.maxHeight = `calc(100dvh - ${controlsHeight}px)`;
   } else {
     canvas.style.maxHeight = '100vh';
