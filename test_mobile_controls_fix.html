@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile Controls Cutoff Fix Test</title>
+</head>
+<body>
+    <h1>Mobile Controls Cutoff Fix</h1>
+    <p>Test the mobile controls fix on a mobile device:</p>
+    
+    <h2>What was fixed:</h2>
+    <ul>
+        <li><strong>CSS Variables:</strong> Increased controls height from 175px to 200px</li>
+        <li><strong>CSS Variables:</strong> Increased controls margin from 20px to 25px</li>
+        <li><strong>JavaScript:</strong> Updated canvas height calculation from 195px to 225px for normal mobile</li>
+        <li><strong>JavaScript:</strong> Updated small screen allocation from 130px to 155px</li>
+    </ul>
+    
+    <h2>Expected behavior:</h2>
+    <ul>
+        <li>✅ Mobile controls panel has more vertical space</li>
+        <li>✅ Bottom buttons (⭐, 🌧️) are fully visible and pressable</li>
+        <li>✅ No cutoff of control elements at bottom of viewport</li>
+        <li>✅ Canvas properly resized to account for larger controls</li>
+        <li>✅ Desktop behavior unchanged</li>
+    </ul>
+    
+    <h2>Test Instructions:</h2>
+    <ol>
+        <li>Open this page on a mobile device</li>
+        <li><a href="index.html">Open the game</a></li>
+        <li>Verify mobile controls are visible</li>
+        <li>Test that all bottom buttons are pressable</li>
+        <li>Check that no controls are cut off at screen bottom</li>
+        <li>Test both portrait and landscape orientations</li>
+    </ol>
+    
+    <h2>Technical Details:</h2>
+    <p><strong>Before:</strong> 175px controls + 20px margin = 195px total</p>
+    <p><strong>After:</strong> 200px controls + 25px margin = 225px total</p>
+    <p><strong>Buffer increase:</strong> 30px additional space for controls</p>
+    
+    <p><a href="index.html">Test Now</a></p>
+</body>
+</html>

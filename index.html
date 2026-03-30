@@ -53,8 +53,8 @@ canvas {
 
 /* CSS custom properties for consistent height calculations */
 :root {
-  --mobile-controls-height: 175px;
-  --mobile-controls-margin: 20px;
+  --mobile-controls-height: 200px;
+  --mobile-controls-margin: 25px;
   --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
 }
 
@@ -375,7 +375,7 @@ function resizeCanvas() {
   
   if (isMobile || isFullscreen) {
     // Reserve space for the mobile controls strip so it never overlaps the canvas
-    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 130 : 195) : 0;
+    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 155 : 225) : 0;
     const availableHeight = window.innerHeight - controlsHeight;
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
