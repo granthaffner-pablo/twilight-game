@@ -313,14 +313,40 @@ ctx.imageSmoothingEnabled = false;
 
 const W = 320, H = 180;
 
-// ===== FORCE HIDE MOBILE CONTROLS ON DESKTOP =====
-(function() {
+// ===== CENTRALIZED MOBILE DETECTION & DOM CACHING =====
+// Cached DOM references to avoid repeated queries
+let cachedMobileControls = null;
+
+/**
+ * Robust mobile detection using multiple factors for maximum compatibility
+ * @returns {boolean} True if running on a mobile device
+ */
+function isMobileDevice() {
   const userAgent = navigator.userAgent.toLowerCase();
-  const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+  const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   const isSmallScreen = window.innerWidth <= 768;
   
-  const mobileControls = document.querySelector('.mobile-controls');
-  if (mobileControls && (!isMobileDevice || !isSmallScreen)) {
+  // Mobile if: mobile device OR (has touch AND small screen)
+  // Desktop if: large screen AND (no touch OR desktop user agent)
+  return isMobileUA || (hasTouch && isSmallScreen);
+}
+
+/**
+ * Get cached mobile controls element reference
+ * @returns {Element|null} The mobile controls DOM element
+ */
+function getMobileControls() {
+  if (!cachedMobileControls) {
+    cachedMobileControls = document.querySelector('.mobile-controls');
+  }
+  return cachedMobileControls;
+}
+
+// ===== FORCE HIDE MOBILE CONTROLS ON DESKTOP =====
+(function() {
+  const mobileControls = getMobileControls();
+  if (mobileControls && !isMobileDevice()) {
     mobileControls.style.display = 'none';
     mobileControls.style.visibility = 'hidden';
     mobileControls.style.opacity = '0';
@@ -329,20 +355,12 @@ const W = 320, H = 180;
 
 // ===== DYNAMIC CANVAS RESIZE (CRISP PIXELS, FULLSCREEN ON DESKTOP/MOBILE) =====
 function resizeCanvas() {
-  // Multi-factor mobile detection for iframe compatibility
-  const userAgent = navigator.userAgent.toLowerCase();
-  const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const isSmallScreen = window.innerWidth <= 768;
-  
-  // Mobile ONLY if: mobile device OR (has touch AND small screen)
-  // Desktop if: large screen AND (no touch OR desktop user agent)
-  const isMobile = isMobileDevice || (hasTouch && isSmallScreen);
+  const isMobile = isMobileDevice();
   
   // Hide mobile controls on desktop
-  const mobileControls = document.querySelector('.mobile-controls');
+  const mobileControls = getMobileControls();
   if (mobileControls) {
-    if (!isMobile || window.innerWidth > 768) {
+    if (!isMobile) {
       mobileControls.style.display = 'none';
     } else {
       mobileControls.style.display = 'flex';
@@ -1006,7 +1024,6 @@ function getAudioCtxSync() {
 }
 
 // ===== RAIN AUDIO SYSTEM =====
-let audioCtx = null;
 let rainAmbientSource = null;
 let rainLPF = null;
 let rainGain = null;
@@ -1083,20 +1100,20 @@ function initRainAudio() {
 }
 
 function playRainDrop(intensity) {
-  if (!audioCtx) return;
+  if (!sharedAudioContext || !whiteNoiseBuffer) return;
 
-  const source = audioCtx.createBufferSource();
+  const source = sharedAudioContext.createBufferSource();
   source.buffer = whiteNoiseBuffer;
 
   // Per-drop LPF: Less muffled (400-900Hz) = clearer "tap" sounds
-  const dropLPF = audioCtx.createBiquadFilter();
+  const dropLPF = sharedAudioContext.createBiquadFilter();
   dropLPF.type = 'lowpass';
   dropLPF.frequency.value = 400 + Math.random() * 500; // Higher range = more audible sparkle
   dropLPF.Q.value = 0.6; // Slightly sharper
 
   // BOOSTED Soft envelope: Quick attack, medium decay (doubled peak volume)
-  const dropGain = audioCtx.createGain();
-  const now = audioCtx.currentTime;
+  const dropGain = sharedAudioContext.createGain();
+  const now = sharedAudioContext.currentTime;
   dropGain.gain.setValueAtTime(0, now);
   dropGain.gain.linearRampToValueAtTime(0.08 * intensity * masterRainVol, now + 0.005); // Apply master volume
   dropGain.gain.exponentialRampToValueAtTime(0.004, now + 0.15); // Slightly longer tail for "pat"
@@ -1104,7 +1121,7 @@ function playRainDrop(intensity) {
   // Connect & play
   source.connect(dropLPF);
   dropLPF.connect(dropGain);
-  dropGain.connect(audioCtx.destination);
+  dropGain.connect(sharedAudioContext.destination);
 
   source.start(now);
   source.stop(now + 0.15);
@@ -1117,18 +1134,18 @@ function updateRainAudio(intensity, dt) {
     initRainAudio();
   }
   
-  if (!rainGain) return;
+  if (!rainGain || !sharedAudioContext) return;
 
   // HALVED ambient volume: Softer/soothing wash (0.12 → 0.06)
   const targetAmbientVol = intensity * 0.06 * masterRainVol; // Apply master volume
-  rainGain.gain.setTargetAtTime(targetAmbientVol, audioCtx.currentTime, 0.15);
+  rainGain.gain.setTargetAtTime(targetAmbientVol, sharedAudioContext.currentTime, 0.15);
 
   // Subtle breathing modulation (unchanged - cozy swell)
   const breathe = 0.92 + 0.08 * Math.sin(Date.now() * 0.0005);
-  rainGain.gain.setTargetAtTime(targetAmbientVol * breathe, audioCtx.currentTime + 0.1, 0.15);
+  rainGain.gain.setTargetAtTime(targetAmbientVol * breathe, sharedAudioContext.currentTime + 0.1, 0.15);
 
   // Dynamic LPF: Slightly higher base (500Hz) for softer-but-clearer tone
-  rainLPF.frequency.setTargetAtTime(500 + intensity * 400, audioCtx.currentTime, 0.2);
+  rainLPF.frequency.setTargetAtTime(500 + intensity * 400, sharedAudioContext.currentTime, 0.2);
 
   // MORE drops: Slightly higher rate (0-25/sec) for fuller sound
   const dropChance = intensity * 25 * dt;
@@ -1138,23 +1155,23 @@ function updateRainAudio(intensity, dt) {
 }
 
 function stopRain() {
-  if (!rainGain) return;
-  rainGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.3); // Smooth 300ms fadeout
+  if (!rainGain || !sharedAudioContext) return;
+  rainGain.gain.setTargetAtTime(0, sharedAudioContext.currentTime, 0.3); // Smooth 300ms fadeout
 }
 
 // Test function for debugging rain audio
 function testRainAudio() {
   // if (DEBUG) console.log('🧪 Testing rain audio system...');
-  // if (DEBUG) console.log(`audioCtx: ${audioCtx ? 'exists' : 'null'}`);
+  // if (DEBUG) console.log(`sharedAudioContext: ${sharedAudioContext ? 'exists' : 'null'}`);
   // if (DEBUG) console.log(`rainGain: ${rainGain ? 'exists' : 'null'}`);
   // if (DEBUG) console.log(`rainAmbientSource: ${rainAmbientSource ? 'exists' : 'null'}`);
   if (DEBUG) console.log(`rainLPF: ${rainLPF ? 'exists' : 'null'}`);
   if (DEBUG) console.log(`whiteNoiseBuffer: ${whiteNoiseBuffer ? 'exists' : 'null'}`);
   if (DEBUG) console.log(`masterRainVol: ${masterRainVol} (change with: masterRainVol = 0.5)`);
   
-  if (audioCtx) {
-    if (DEBUG) console.log(`AudioContext state: ${audioCtx.state}`);
-    if (DEBUG) console.log(`Sample rate: ${audioCtx.sampleRate}`);
+  if (sharedAudioContext) {
+    if (DEBUG) console.log(`AudioContext state: ${sharedAudioContext.state}`);
+    if (DEBUG) console.log(`Sample rate: ${sharedAudioContext.sampleRate}`);
   }
   
   if (rainGain) {
@@ -1162,7 +1179,7 @@ function testRainAudio() {
   }
   
   // Test a single drop
-  if (audioCtx && whiteNoiseBuffer) {
+  if (sharedAudioContext && whiteNoiseBuffer) {
     if (DEBUG) console.log('🧪 Playing test drop...');
     playRainDrop(1.0);
   }
@@ -2199,13 +2216,11 @@ const mobileHints = [
   "CHECK PUDDLES FOR REFLECTIONS",
   "TAP 🎵 TO WHISTLE",
   "TAP ⭐ AND MAKE A WISH",
-  "TAP 🌕 TO VIEW MOON",
   "SIT WITH SILENCE",
-  "TAP 🌙 TO CYCLE MOON PHASES"
+  "TAP TO CYCLE MOON PHASES"
 ];
 
-const isMobileDevice = window.innerWidth <= 1024;
-const hintTips = isMobileDevice ? mobileHints : desktopHints;
+const hintTips = isMobileDevice() ? mobileHints : desktopHints;
 
 // Create a HintScreen instance
 const hintScreen = new HintScreen(hintTips);
