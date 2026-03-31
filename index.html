@@ -45,16 +45,16 @@ canvas {
   display: none;
   background: linear-gradient(to bottom, rgba(10, 15, 30, 0.1) 0%, rgba(10, 15, 30, 0.3) 100%);
   border-top: 2px solid rgba(120, 150, 255, 0.3);
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 20px);
   flex-shrink: 0;
 }
 
 /* CSS custom properties for consistent height calculations */
 :root {
-  --mobile-controls-height: 200px;
+  --mobile-controls-height: 240px;
   --mobile-controls-margin: 25px;
   --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
-  --mobile-controls-small-height: 155px; /* For screens < 500px */
+  --mobile-controls-small-height: 200px; /* For screens < 500px */
 }
 
 /* Left Side: D-Pad Style Movement */
