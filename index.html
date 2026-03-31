@@ -22,6 +22,7 @@ body {
   -webkit-overflow-scrolling: touch;
   position: relative;
 }
+
 canvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -37,17 +38,15 @@ canvas {
 
 /* ===== MOBILE CONTROLS - RETRO GAMEPAD LAYOUT ===== */
 .mobile-controls {
-  position: fixed;
-  bottom: env(safe-area-inset-bottom, 0);
-  left: 0;
-  width: 100vw;
+  position: relative;
+  width: 100%;
   height: var(--mobile-controls-height);
   pointer-events: auto;
-  z-index: 10;
   display: none;
   background: linear-gradient(to bottom, rgba(10, 15, 30, 0.1) 0%, rgba(10, 15, 30, 0.3) 100%);
   border-top: 2px solid rgba(120, 150, 255, 0.3);
   padding-bottom: env(safe-area-inset-bottom, 0);
+  flex-shrink: 0;
 }
 
 /* CSS custom properties for consistent height calculations */
@@ -275,8 +274,21 @@ canvas {
 /* Mobile layout: Stack canvas and controls vertically */
 @media (max-width: 768px) {
   body {
+    flex-direction: column !important;
     justify-content: flex-start !important;
     align-items: center !important;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  canvas {
+    flex-shrink: 0;
+    margin: 0;
+  }
+  
+  .mobile-controls {
+    display: flex !important;
+    margin-top: var(--mobile-controls-margin);
   }
 }
 </style>
@@ -373,17 +385,8 @@ function resizeCanvas() {
   );
   
   if (isMobile || isFullscreen) {
-    // Get control dimensions from CSS custom properties for consistency
-    const rootStyles = getComputedStyle(document.documentElement);
-    const controlsHeight = isMobile ? 
-      (window.innerHeight < 500 ? 
-        parseInt(rootStyles.getPropertyValue('--mobile-controls-small-height')) : 
-        parseInt(rootStyles.getPropertyValue('--mobile-controls-height'))) : 0;
-    const controlsMargin = isMobile ? parseInt(rootStyles.getPropertyValue('--mobile-controls-margin')) : 0;
-    
-    // Calculate available height: subtract controls height AND margin for proper spacing
-    const totalControlsSpace = controlsHeight + controlsMargin;
-    const availableHeight = window.innerHeight - totalControlsSpace;
+    // For mobile, canvas uses available viewport height (controls are in flow below)
+    const availableHeight = window.innerHeight;
     
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
