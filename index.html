@@ -354,29 +354,12 @@ function getMobileControls() {
   return cachedMobileControls;
 }
 
-// ===== FORCE HIDE MOBILE CONTROLS ON DESKTOP =====
-(function() {
-  const mobileControls = getMobileControls();
-  if (mobileControls && !isMobileDevice()) {
-    mobileControls.style.display = 'none';
-    mobileControls.style.visibility = 'hidden';
-    mobileControls.style.opacity = '0';
-  }
-})();
+// ===== MOBILE CONTROLS VISIBILITY =====
+// CSS media queries handle mobile controls visibility automatically
 
 // ===== DYNAMIC CANVAS RESIZE (CRISP PIXELS, FULLSCREEN ON DESKTOP/MOBILE) =====
 function resizeCanvas() {
   const isMobile = isMobileDevice();
-  
-  // Hide mobile controls on desktop
-  const mobileControls = getMobileControls();
-  if (mobileControls) {
-    if (!isMobile) {
-      mobileControls.style.display = 'none';
-    } else {
-      mobileControls.style.display = 'flex';
-    }
-  }
   
   const isFullscreen = !!(
     document.fullscreenElement ||
