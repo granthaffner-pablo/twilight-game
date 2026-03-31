@@ -38,7 +38,7 @@ canvas {
 /* ===== MOBILE CONTROLS - RETRO GAMEPAD LAYOUT ===== */
 .mobile-controls {
   position: fixed;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0);
   left: 0;
   width: 100vw;
   height: var(--mobile-controls-height);
@@ -47,6 +47,7 @@ canvas {
   display: none;
   background: linear-gradient(to bottom, rgba(10, 15, 30, 0.1) 0%, rgba(10, 15, 30, 0.3) 100%);
   border-top: 2px solid rgba(120, 150, 255, 0.3);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* CSS custom properties for consistent height calculations */
@@ -54,6 +55,7 @@ canvas {
   --mobile-controls-height: 200px;
   --mobile-controls-margin: 25px;
   --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
+  --mobile-controls-small-height: 155px; /* For screens < 500px */
 }
 
 /* Left Side: D-Pad Style Movement */
@@ -371,9 +373,18 @@ function resizeCanvas() {
   );
   
   if (isMobile || isFullscreen) {
-    // Reserve space for the mobile controls strip so it never overlaps the canvas
-    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 155 : 200) : 0;
-    const availableHeight = window.innerHeight - controlsHeight;
+    // Get control dimensions from CSS custom properties for consistency
+    const rootStyles = getComputedStyle(document.documentElement);
+    const controlsHeight = isMobile ? 
+      (window.innerHeight < 500 ? 
+        parseInt(rootStyles.getPropertyValue('--mobile-controls-small-height')) : 
+        parseInt(rootStyles.getPropertyValue('--mobile-controls-height'))) : 0;
+    const controlsMargin = isMobile ? parseInt(rootStyles.getPropertyValue('--mobile-controls-margin')) : 0;
+    
+    // Calculate available height: subtract controls height AND margin for proper spacing
+    const totalControlsSpace = controlsHeight + controlsMargin;
+    const availableHeight = window.innerHeight - totalControlsSpace;
+    
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
     const scale = Math.floor(Math.min(scaleX, scaleY, 8));
@@ -388,11 +399,28 @@ function resizeCanvas() {
   canvas.style.maxHeight = '100vh';
 }
 
+// ===== DYNAMIC CANVAS RESIZE EVENT LISTENERS =====
+// Feature detection to add only supported fullscreen events
+function setupFullscreenListeners() {
+  const resizeHandler = () => setTimeout(resizeCanvas, 100);
+  
+  // Standard fullscreen API
+  if ('onfullscreenchange' in document) {
+    document.addEventListener('fullscreenchange', resizeHandler);
+  }
+  // WebKit (Safari)
+  if ('onwebkitfullscreenchange' in document) {
+    document.addEventListener('webkitfullscreenchange', resizeHandler);
+  }
+  // Mozilla (Firefox)
+  if ('onmozfullscreenchange' in document) {
+    document.addEventListener('mozfullscreenchange', resizeHandler);
+  }
+}
+
 window.addEventListener('resize', resizeCanvas);
 window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
-document.addEventListener('fullscreenchange', resizeCanvas);
-document.addEventListener('webkitfullscreenchange', resizeCanvas);
-document.addEventListener('mozfullscreenchange', resizeCanvas);
+setupFullscreenListeners(); // Add only supported fullscreen events
 resizeCanvas(); // Initial call
 
 // ===== MOBILE CONTROLS WITH HAPTIC FEEDBACK & DOUBLE-TAP-TO-RUN =====
