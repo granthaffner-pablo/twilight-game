@@ -1201,9 +1201,6 @@ function initRainAudio() {
   getAudioCtxSync(); // Ensure context exists
   const audioCtx = sharedAudioContext;
 
-  // if (DEBUG) console.log('🌧️ Initializing rain audio system...');
-  // if (DEBUG) console.log(`🌧️ AudioContext state: ${audioCtx.state}`);
-
   // ===== SEAMLESS AMBIENT PINK NOISE (10s loop - imperceptible cycles) =====
   const bufferLength = audioCtx.sampleRate * 10; // 10s - long enough to feel infinite
   const buffer = audioCtx.createBuffer(1, bufferLength, audioCtx.sampleRate);
@@ -1322,10 +1319,6 @@ function stopRain() {
 
 // Test function for debugging rain audio
 function testRainAudio() {
-  // if (DEBUG) console.log('🧪 Testing rain audio system...');
-  // if (DEBUG) console.log(`sharedAudioContext: ${sharedAudioContext ? 'exists' : 'null'}`);
-  // if (DEBUG) console.log(`rainGain: ${rainGain ? 'exists' : 'null'}`);
-  // if (DEBUG) console.log(`rainAmbientSource: ${rainAmbientSource ? 'exists' : 'null'}`);
   if (DEBUG) console.log(`rainLPF: ${rainLPF ? 'exists' : 'null'}`);
   if (DEBUG) console.log(`whiteNoiseBuffer: ${whiteNoiseBuffer ? 'exists' : 'null'}`);
   if (DEBUG) console.log(`masterRainVol: ${masterRainVol} (change with: masterRainVol = 0.5)`);
