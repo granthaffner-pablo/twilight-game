@@ -37,16 +37,14 @@ canvas {
 
 /* ===== MOBILE CONTROLS - RETRO GAMEPAD LAYOUT ===== */
 .mobile-controls {
-  position: relative;
-  top: auto;
-  left: auto;
+  position: fixed;
+  bottom: 0;
+  left: 0;
   width: 100vw;
   height: var(--mobile-controls-height);
-  margin-top: var(--mobile-controls-margin);
   pointer-events: auto;
   z-index: 10;
   display: none;
-  flex-shrink: 0;
   background: linear-gradient(to bottom, rgba(10, 15, 30, 0.1) 0%, rgba(10, 15, 30, 0.3) 100%);
   border-top: 2px solid rgba(120, 150, 255, 0.3);
 }
@@ -275,7 +273,6 @@ canvas {
 /* Mobile layout: Stack canvas and controls vertically */
 @media (max-width: 768px) {
   body {
-    flex-direction: column !important;
     justify-content: flex-start !important;
     align-items: center !important;
   }
@@ -375,7 +372,7 @@ function resizeCanvas() {
   
   if (isMobile || isFullscreen) {
     // Reserve space for the mobile controls strip so it never overlaps the canvas
-    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 155 : 225) : 0;
+    const controlsHeight = isMobile ? (window.innerHeight < 500 ? 155 : 200) : 0;
     const availableHeight = window.innerHeight - controlsHeight;
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;

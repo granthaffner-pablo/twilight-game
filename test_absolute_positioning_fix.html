@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile Controls Absolute Positioning Fix</title>
+</head>
+<body>
+    <h1>Mobile Controls Absolute Positioning Fix</h1>
+    <p>Test the absolute positioning fix on a mobile device:</p>
+    
+    <h2>What was fixed:</h2>
+    <ul>
+        <li><strong>CSS:</strong> Changed mobile controls from relative to absolute positioning</li>
+        <li><strong>CSS:</strong> Positioned controls at bottom of viewport using <code>position: fixed; bottom: 0</code></li>
+        <li><strong>CSS:</strong> Removed margin-top since controls are absolutely positioned</li>
+        <li><strong>CSS:</strong> Removed mobile layout flexbox constraints</li>
+        <li><strong>JavaScript:</strong> Updated canvas height calculation to reserve 200px for controls</li>
+    </ul>
+    
+    <h2>Expected behavior:</h2>
+    <ul>
+        <li>✅ Mobile controls appear at bottom of screen (fixed positioning)</li>
+        <li>✅ Game canvas is visible above the controls</li>
+        <li>✅ No overlap between canvas and controls</li>
+        <li>✅ All buttons are fully pressable</li>
+        <li>✅ Canvas properly sized to avoid control area</li>
+        <li>✅ Desktop behavior unchanged</li>
+    </ul>
+    
+    <h2>Test Instructions:</h2>
+    <ol>
+        <li>Open this page on a mobile device</li>
+        <li><a href="index.html">Open the game</a></li>
+        <li>Verify mobile controls are at bottom of screen</li>
+        <li>Check that game canvas is visible above controls</li>
+        <li>Test that all buttons are pressable</li>
+        <li>Ensure no overlap between canvas and controls</li>
+        <li>Test both portrait and landscape orientations</li>
+    </ol>
+    
+    <h2>Technical Details:</h2>
+    <p><strong>Controls:</strong> position: fixed; bottom: 0; width: 100vw; height: 200px</p>
+    <p><strong>Canvas:</strong> Height calculated as window.innerHeight - 200px on mobile</p>
+    <p><strong>Layout:</strong> No flexbox constraints, absolute positioning only</p>
+    
+    <p><a href="index.html">Test Now</a></p>
+</body>
+</html>
