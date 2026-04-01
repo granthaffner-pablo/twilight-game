@@ -340,6 +340,9 @@ function isMobileDevice() {
 function getMobileControls() {
   if (!cachedMobileControls) {
     cachedMobileControls = document.querySelector('.mobile-controls');
+    if (!cachedMobileControls && DEBUG) {
+      console.warn('Mobile controls element not found');
+    }
   }
   return cachedMobileControls;
 }
@@ -429,9 +432,10 @@ function initMobileControls() {
       if (isMovementKey) {
         tapCount++;
         
-        // Clear existing timer
+        // Clear existing timer safely
         if (tapTimer) {
           clearTimeout(tapTimer);
+          tapTimer = null;
         }
         
         // If second tap within delay window = RUN MODE
@@ -466,6 +470,7 @@ function initMobileControls() {
           // Set timer to reset tap count if no second tap
           tapTimer = setTimeout(() => {
             tapCount = 0;
+            tapTimer = null; // Clear timer reference
           }, doubleTapDelay);
         }
       } else {
@@ -498,7 +503,11 @@ function initMobileControls() {
         });
         document.dispatchEvent(evUp);
         
-        // Keep running state until next press cycle
+        // Reset running state when button is released
+        isRunning = false;
+        
+        // Clear the key state to stop movement
+        keys[key] = false;
       } else {
         const evUp = new KeyboardEvent('keyup', {
           key: key,
@@ -507,6 +516,9 @@ function initMobileControls() {
           cancelable: true
         });
         document.dispatchEvent(evUp);
+        
+        // Clear the key state for non-movement keys too
+        keys[key] = false;
       }
     };
 
@@ -1004,18 +1016,18 @@ function cleanupAllParticles() {
   
   // Clear puddle pixels and other static arrays
   if (puddlePixels.length > 0) {
-    puddlePixels.length = 0;
+    puddlePixels.splice(0, puddlePixels.length);
   }
   // Note: puddlePixelCount is a constant, so we don't reset it
   
   // Clear shooting stars to prevent ending stars from appearing at game start
   if (shootingStars.length > 0) {
-    shootingStars.length = 0;
+    shootingStars.splice(0, shootingStars.length);
   }
   
   // Clear background stars to prevent twilight stars from persisting after restart
   if (stars.length > 0) {
-    stars.length = 0;
+    stars.splice(0, stars.length);
   }
 }
 
@@ -2451,13 +2463,14 @@ window.addEventListener("keydown", e => {
 });
 
 window.addEventListener("keyup", e => {
-  // Reset speed when Shift released OR when shiftKey modifier is gone
-  if (e.key === "Shift" || (e.shiftKey === false && speedMultiplier > 1.0)) {
+  // Reset speed when Shift released OR when movement key is released with shiftKey
+  if (e.key === "Shift" || 
+      ((e.key === "a" || e.key === "d" || e.key === "A" || e.key === "D") && e.shiftKey)) {
     speedMultiplier = 1.0; // normal speed
   }
 });
 
-// ─── DRAW DOCK LAMP GLOW (DIRECT POSITIONING) ─────────────
+// DRAW DOCK LAMP GLOW (DIRECT POSITIONING) 
 function drawDockLampGlow(lampTipX, lampTipY, offsetX = 0, offsetY = 0) {
   // Final lamp tip coordinates (allow for fine-tuning if needed)
   const finalX = lampTipX + offsetX;
