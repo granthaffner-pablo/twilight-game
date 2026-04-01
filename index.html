@@ -227,16 +227,6 @@ canvas {
   }
 }
 
-/* Also hide on any hover-capable device (desktop) */
-@media (hover: hover) and (pointer: fine) {
-  .mobile-controls {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-}
-
 /* Landscape mode optimization */
 @media (max-height: 500px) and (orientation: landscape) {
   .dpad-container, .action-cluster {
