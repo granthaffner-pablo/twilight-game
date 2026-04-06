@@ -361,16 +361,17 @@ function resizeCanvas() {
     document.mozFullScreenElement
   );
   
+  const controlsHeight = 240; // match CSS var --mobile-controls-height
+  const spacing = 25; // match CSS var --mobile-controls-margin
+  const topMargin = 10; // match CSS canvas margin-top
+
   if (isMobile || isFullscreen) {
-    // For mobile, account for controls height and spacing
-    const controlsHeight = 240; // match CSS var --mobile-controls-height
-    const spacing = 25; // match CSS var --mobile-controls-margin
-    
-    const availableHeight = window.innerHeight - controlsHeight - spacing;
-    
+    // For mobile, account for controls height, spacing, and top margin
+    const availableHeight = window.innerHeight - controlsHeight - spacing - topMargin;
+
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
-    const scale = Math.floor(Math.min(scaleX, scaleY, 8));
+    const scale = Math.min(scaleX, scaleY, 8);
     canvas.style.width = `${W * scale}px`;
     canvas.style.height = `${H * scale}px`;
   } else {
@@ -379,7 +380,11 @@ function resizeCanvas() {
     canvas.style.height = `${H * FIXED_SCALE}px`;
   }
   canvas.style.maxWidth = '100vw';
-  canvas.style.maxHeight = '100vh';
+  if (isMobile) {
+    canvas.style.maxHeight = `calc(100dvh - ${controlsHeight + spacing + topMargin}px)`;
+  } else {
+    canvas.style.maxHeight = '100vh';
+  }
 }
 
 // ===== DYNAMIC CANVAS RESIZE EVENT LISTENERS =====
