@@ -13,7 +13,9 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   touch-action: none;
@@ -52,7 +54,7 @@ canvas {
 /* CSS custom properties for consistent height calculations */
 :root {
   --mobile-controls-height: 240px;
-  --mobile-controls-margin: 25px;
+  --mobile-controls-margin: 8px;
   --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
   --mobile-controls-small-height: 200px; /* For screens < 500px */
 }
@@ -269,17 +271,19 @@ canvas {
     align-items: center;
     justify-content: flex-start;
     height: 100vh;
-    overflow: hidden; /* important - prevents scrolling issues */
+    height: 100dvh; /* dynamic viewport height - handles mobile browser chrome */
+    overflow: hidden;
   }
-  
+
   canvas {
     flex-shrink: 0;
-    margin-top: 10px;
+    margin-top: 5px;
   }
-  
+
   .mobile-controls {
     display: flex !important;
-    margin-top: var(--mobile-controls-margin);
+    margin-top: 8px;
+    flex-shrink: 0;
   }
 }
 </style>
@@ -361,28 +365,27 @@ function resizeCanvas() {
     document.mozFullScreenElement
   );
   
-  const controlsHeight = 240; // match CSS var --mobile-controls-height
-  const spacing = 25; // match CSS var --mobile-controls-margin
-  const topMargin = 10; // match CSS canvas margin-top
-
   if (isMobile || isFullscreen) {
-    // For mobile, account for controls height, spacing, and top margin
-    const availableHeight = window.innerHeight - controlsHeight - spacing - topMargin;
+    // Dynamically measure actual controls height (includes padding, safe areas)
+    const controls = getMobileControls();
+    const controlsHeight = controls ? controls.offsetHeight : 0;
+    const topMargin = 5;  // match CSS canvas margin-top
+    const gap = 8;        // match CSS mobile-controls margin-top
+
+    const availableHeight = window.innerHeight - controlsHeight - gap - topMargin;
 
     const scaleX = window.innerWidth / W;
     const scaleY = availableHeight / H;
     const scale = Math.min(scaleX, scaleY, 8);
     canvas.style.width = `${W * scale}px`;
     canvas.style.height = `${H * scale}px`;
+    canvas.style.maxWidth = '100vw';
+    canvas.style.maxHeight = `${availableHeight}px`;
   } else {
     const FIXED_SCALE = 3; // ← Adjust this to your preference!
     canvas.style.width = `${W * FIXED_SCALE}px`;
     canvas.style.height = `${H * FIXED_SCALE}px`;
-  }
-  canvas.style.maxWidth = '100vw';
-  if (isMobile) {
-    canvas.style.maxHeight = `calc(100dvh - ${controlsHeight + spacing + topMargin}px)`;
-  } else {
+    canvas.style.maxWidth = '100vw';
     canvas.style.maxHeight = '100vh';
   }
 }
