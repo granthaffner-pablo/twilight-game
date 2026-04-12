@@ -352,6 +352,20 @@ function getMobileControls() {
   return cachedMobileControls;
 }
 
+/**
+ * Get CSS custom property value with fallback
+ * @param {string} property - CSS custom property name (without --)
+ * @param {string} fallback - Default fallback value
+ * @returns {string} The CSS property value or fallback
+ */
+function getCSSVariable(property, fallback = '0px') {
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue(`--${property}`).trim() || fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
 // ===== MOBILE CONTROLS VISIBILITY =====
 // CSS media queries handle mobile controls visibility automatically
 
@@ -368,19 +382,33 @@ function resizeCanvas() {
   if (isMobile || isFullscreen) {
     // Dynamically measure actual controls height (includes padding, safe areas)
     const controls = getMobileControls();
-    const controlsHeight = controls ? controls.offsetHeight : 0;
+    
+    // Use CSS custom properties as fallback when DOM element isn't available
+    // This ensures consistency with CSS values
+    const cssSmallHeight = parseInt(getCSSVariable('mobile-controls-small-height', '200px'));
+    const cssNormalHeight = parseInt(getCSSVariable('mobile-controls-height', '240px'));
+    const fallbackHeight = window.innerWidth < 500 ? cssSmallHeight : cssNormalHeight;
+    
+    const controlsHeight = controls ? controls.offsetHeight : fallbackHeight;
     const topMargin = 5;  // match CSS canvas margin-top
-    const gap = 8;        // match CSS mobile-controls margin-top
+    const gap = parseInt(getCSSVariable('mobile-controls-margin', '8px')); // Use CSS value
 
     const availableHeight = window.innerHeight - controlsHeight - gap - topMargin;
 
+    // Ensure we have a valid available height (prevent negative values)
+    const safeAvailableHeight = Math.max(100, availableHeight); // Minimum 100px for usability
+
     const scaleX = window.innerWidth / W;
-    const scaleY = availableHeight / H;
+    const scaleY = safeAvailableHeight / H;
     const scale = Math.min(scaleX, scaleY, 8);
-    canvas.style.width = `${W * scale}px`;
-    canvas.style.height = `${H * scale}px`;
+    
+    // Ensure scale is reasonable (prevent too small or too large)
+    const safeScale = Math.max(0.5, Math.min(scale, 8));
+    
+    canvas.style.width = `${W * safeScale}px`;
+    canvas.style.height = `${H * safeScale}px`;
     canvas.style.maxWidth = '100vw';
-    canvas.style.maxHeight = `${availableHeight}px`;
+    canvas.style.maxHeight = `${safeAvailableHeight}px`;
   } else {
     const FIXED_SCALE = 3; // ← Adjust this to your preference!
     canvas.style.width = `${W * FIXED_SCALE}px`;
