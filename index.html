@@ -53,10 +53,10 @@ canvas {
 
 /* CSS custom properties for consistent height calculations */
 :root {
-  --mobile-controls-height: 220px;
+  --mobile-controls-height: 260px;
   --mobile-controls-margin: 2px;
   --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
-  --mobile-controls-small-height: 180px; /* For screens < 500px */
+  --mobile-controls-small-height: 220px; /* For screens < 500px */
 }
 
 /* Left Side: D-Pad Style Movement */
@@ -385,8 +385,8 @@ function resizeCanvas() {
     
     // Use CSS custom properties as fallback when DOM element isn't available
     // This ensures consistency with CSS values
-    const cssSmallHeight = parseInt(getCSSVariable('mobile-controls-small-height', '180px'));
-    const cssNormalHeight = parseInt(getCSSVariable('mobile-controls-height', '220px'));
+    const cssSmallHeight = parseInt(getCSSVariable('mobile-controls-small-height', '220px'));
+    const cssNormalHeight = parseInt(getCSSVariable('mobile-controls-height', '260px'));
     const fallbackHeight = window.innerWidth < 500 ? cssSmallHeight : cssNormalHeight;
     
     const controlsHeight = controls ? controls.offsetHeight : fallbackHeight;
