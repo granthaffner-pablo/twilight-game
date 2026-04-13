@@ -53,10 +53,10 @@ canvas {
 
 /* CSS custom properties for consistent height calculations */
 :root {
-  --mobile-controls-height: 240px;
+  --mobile-controls-height: 220px;
   --mobile-controls-margin: 2px;
   --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
-  --mobile-controls-small-height: 200px; /* For screens < 500px */
+  --mobile-controls-small-height: 180px; /* For screens < 500px */
 }
 
 /* Left Side: D-Pad Style Movement */
@@ -385,22 +385,26 @@ function resizeCanvas() {
     
     // Use CSS custom properties as fallback when DOM element isn't available
     // This ensures consistency with CSS values
-    const cssSmallHeight = parseInt(getCSSVariable('mobile-controls-small-height', '200px'));
-    const cssNormalHeight = parseInt(getCSSVariable('mobile-controls-height', '240px'));
+    const cssSmallHeight = parseInt(getCSSVariable('mobile-controls-small-height', '180px'));
+    const cssNormalHeight = parseInt(getCSSVariable('mobile-controls-height', '220px'));
     const fallbackHeight = window.innerWidth < 500 ? cssSmallHeight : cssNormalHeight;
     
     const controlsHeight = controls ? controls.offsetHeight : fallbackHeight;
     const topMargin = 2;  // match CSS canvas margin-top
     const gap = parseInt(getCSSVariable('mobile-controls-margin', '2px')); // Use CSS value
 
+    // Give more space to game by reducing controls height and using more viewport
     const availableHeight = window.innerHeight - controlsHeight - gap - topMargin;
+    
+    // Ensure game gets adequate space (at least 60% of viewport for good visibility)
+    const minGameHeight = window.innerHeight * 0.6;
+    const safeAvailableHeight = Math.max(minGameHeight, availableHeight);
 
-    // Ensure we have a valid available height (prevent negative values)
-    const safeAvailableHeight = Math.max(100, availableHeight); // Minimum 100px for usability
-
-    // On mobile, prioritize width to match controls stack, then scale height proportionally
-    const mobileScale = Math.min(window.innerWidth / W, 8); // Use full width but cap at 8x scale
-    const safeMobileScale = Math.max(0.5, mobileScale);
+    // Calculate scale based on available height to make game larger
+    const heightScale = safeAvailableHeight / H;
+    const widthScale = window.innerWidth / W;
+    const mobileScale = Math.min(heightScale, widthScale, 8); // Use whichever allows proper fit
+    const safeMobileScale = Math.max(0.8, mobileScale); // Increase minimum scale for larger game
     
     canvas.style.width = '100vw'; // Full viewport width to match controls
     canvas.style.height = `${H * safeMobileScale}px`;
