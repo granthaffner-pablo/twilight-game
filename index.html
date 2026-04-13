@@ -398,15 +398,12 @@ function resizeCanvas() {
     // Ensure we have a valid available height (prevent negative values)
     const safeAvailableHeight = Math.max(100, availableHeight); // Minimum 100px for usability
 
-    const scaleX = window.innerWidth / W;
-    const scaleY = safeAvailableHeight / H;
-    const scale = Math.min(scaleX, scaleY, 8);
+    // On mobile, prioritize width to match controls stack, then scale height proportionally
+    const mobileScale = Math.min(window.innerWidth / W, 8); // Use full width but cap at 8x scale
+    const safeMobileScale = Math.max(0.5, mobileScale);
     
-    // Ensure scale is reasonable (prevent too small or too large)
-    const safeScale = Math.max(0.5, Math.min(scale, 8));
-    
-    canvas.style.width = `${W * safeScale}px`;
-    canvas.style.height = `${H * safeScale}px`;
+    canvas.style.width = '100vw'; // Full viewport width to match controls
+    canvas.style.height = `${H * safeMobileScale}px`;
     canvas.style.maxWidth = '100vw';
     canvas.style.maxHeight = `${safeAvailableHeight}px`;
   } else {
