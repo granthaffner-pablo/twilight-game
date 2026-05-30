@@ -42,12 +42,16 @@ canvas {
 .mobile-controls {
   position: relative;
   width: 100%;
-  height: var(--mobile-controls-height);
+  box-sizing: border-box;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
   pointer-events: auto;
   display: none;
   background: linear-gradient(to bottom, rgba(10, 15, 30, 0.1) 0%, rgba(10, 15, 30, 0.3) 100%);
   border-top: none;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 2px);
+  padding: 12px max(15px, env(safe-area-inset-left, 15px));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 12px);
   flex-shrink: 0;
 }
 
@@ -62,11 +66,11 @@ canvas {
 /* Left Side: D-Pad Style Movement */
 .dpad-container {
   position: absolute;
-  left: max(15px, env(safe-area-inset-left, 15px));
+  position: static;
   bottom: 15px;
   pointer-events: auto;
   display: grid;
-  grid-template-columns: 60px 60px 60px;
+  grid-template-columns: 60px 60px;
   grid-template-rows: 60px 60px;
   gap: 4px;
   filter: drop-shadow(0 8px 24px rgba(120, 150, 255, 0.4));
@@ -132,7 +136,7 @@ canvas {
 /* Right Side: Action Buttons Cluster */
 .action-cluster {
   position: absolute;
-  right: max(15px, env(safe-area-inset-right, 15px));
+  position: static;
   bottom: 15px;
   pointer-events: auto;
   display: flex;
