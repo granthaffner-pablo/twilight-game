@@ -55,19 +55,14 @@ canvas {
   flex-shrink: 0;
 }
 
-/* CSS custom properties for consistent height calculations */
+/* CSS custom property for the gap between canvas and controls */
 :root {
-  --mobile-controls-height: 220px;
   --mobile-controls-margin: 2px;
-  --mobile-controls-total-height: calc(var(--mobile-controls-height) + var(--mobile-controls-margin));
-  --mobile-controls-small-height: 180px; /* For screens < 500px */
 }
 
 /* Left Side: D-Pad Style Movement */
 .dpad-container {
-  position: absolute;
   position: static;
-  bottom: 15px;
   pointer-events: auto;
   display: grid;
   grid-template-columns: 60px 60px;
@@ -135,9 +130,7 @@ canvas {
 
 /* Right Side: Action Buttons Cluster */
 .action-cluster {
-  position: absolute;
   position: static;
-  bottom: 15px;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
@@ -235,9 +228,6 @@ canvas {
 
 /* Landscape mode optimization */
 @media (max-height: 500px) and (orientation: landscape) {
-  .dpad-container, .action-cluster {
-    bottom: 6px;
-  }
   .dpad-btn {
     width: 50px;
     height: 50px;
@@ -384,36 +374,28 @@ function resizeCanvas() {
   );
   
   if (isMobile || isFullscreen) {
-    // Dynamically measure actual controls height (includes padding, safe areas)
     const controls = getMobileControls();
     
-    // Use CSS custom properties as fallback when DOM element isn't available
-    // This ensures consistency with CSS values
-    const cssSmallHeight = parseInt(getCSSVariable('mobile-controls-small-height', '180px'));
-    const cssNormalHeight = parseInt(getCSSVariable('mobile-controls-height', '220px'));
-    const fallbackHeight = window.innerWidth < 500 ? cssSmallHeight : cssNormalHeight;
-    
-    const controlsHeight = controls ? controls.offsetHeight : fallbackHeight;
+    // Measure the actual controls height. The controls are auto-sized to
+    // their content (including padding and safe-area insets), so this is
+    // accurate. Fallback is only used if the element isn't in the DOM yet.
+    const controlsHeight = controls ? controls.offsetHeight : 180;
     const topMargin = 2;  // match CSS canvas margin-top
-    const gap = parseInt(getCSSVariable('mobile-controls-margin', '2px')); // Use CSS value
+    const gap = parseInt(getCSSVariable('mobile-controls-margin', '2px'));
 
-    // Give more space to game by reducing controls height and using more viewport
-    const availableHeight = window.innerHeight - controlsHeight - gap - topMargin;
-    
-    // Ensure game gets adequate space (at least 60% of viewport for good visibility)
-    const minGameHeight = window.innerHeight * 0.6;
-    const safeAvailableHeight = Math.max(minGameHeight, availableHeight);
+    // Space left for the canvas after reserving room for the controls.
+    const availableHeight = Math.max(100, window.innerHeight - controlsHeight - gap - topMargin);
 
-    // Calculate scale based on available height to make game larger
-    const heightScale = safeAvailableHeight / H;
-    const widthScale = window.innerWidth / W;
-    const mobileScale = Math.min(heightScale, widthScale, 8); // Use whichever allows proper fit
-    const safeMobileScale = Math.max(0.8, mobileScale); // Increase minimum scale for larger game
-    
-    canvas.style.width = '100vw'; // Full viewport width to match controls
-    canvas.style.height = `${H * safeMobileScale}px`;
+    // Scale preserves the 320x180 aspect ratio by fitting within whichever
+    // of width or available height is the limiting factor. This keeps the
+    // canvas centered and guarantees the controls are never pushed off-screen.
+    const scale = Math.min(window.innerWidth / W, availableHeight / H, 8);
+    const safeScale = Math.max(0.5, scale);
+
+    canvas.style.width = `${W * safeScale}px`;
+    canvas.style.height = `${H * safeScale}px`;
     canvas.style.maxWidth = '100vw';
-    canvas.style.maxHeight = `${safeAvailableHeight}px`;
+    canvas.style.maxHeight = `${availableHeight}px`;
   } else {
     const FIXED_SCALE = 3; // ← Adjust this to your preference!
     canvas.style.width = `${W * FIXED_SCALE}px`;
