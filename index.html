@@ -228,18 +228,35 @@ canvas {
 
 /* Landscape mode optimization */
 @media (max-height: 500px) and (orientation: landscape) {
+  .mobile-controls {
+    padding: 8px max(15px, env(safe-area-inset-left, 15px));
+    padding-bottom: calc(env(safe-area-inset-bottom, 0) + 8px);
+    gap: 16px; /* More horizontal spacing in landscape */
+  }
+  
   .dpad-btn {
     width: 50px;
     height: 50px;
     font-size: 24px;
   }
+  
   .action-btn {
     width: 54px;
     height: 54px;
     font-size: 24px;
   }
+  
   .action-btn .label {
     font-size: 9px;
+  }
+  
+  /* Reduce vertical spacing in action cluster for landscape */
+  .action-cluster {
+    gap: 8px;
+  }
+  
+  .action-row {
+    gap: 8px;
   }
 }
 
@@ -375,6 +392,7 @@ function resizeCanvas() {
   
   if (isMobile || isFullscreen) {
     const controls = getMobileControls();
+    const isLandscape = window.innerHeight < window.innerWidth && window.innerHeight <= 500;
     
     // Measure the actual controls height. The controls are auto-sized to
     // their content (including padding and safe-area insets), so this is
@@ -386,14 +404,21 @@ function resizeCanvas() {
     // Space left for the canvas after reserving room for the controls.
     const availableHeight = Math.max(100, window.innerHeight - controlsHeight - gap - topMargin);
 
-    // Scale preserves the 320x180 aspect ratio by fitting within whichever
-    // of width or available height is the limiting factor. This keeps the
-    // canvas centered and guarantees the controls are never pushed off-screen.
-    const scale = Math.min(window.innerWidth / W, availableHeight / H, 8);
-    const safeScale = Math.max(0.5, scale);
+    // In landscape mode, give the canvas more space since controls spread horizontally
+    let scale;
+    if (isLandscape) {
+      // Landscape: prioritize height since we have more width available
+      const landscapeScale = availableHeight / H;
+      const maxScale = Math.min(landscapeScale, 8); // Cap at 8x scale
+      scale = Math.max(1.2, maxScale); // Minimum 1.2x for better landscape visibility
+    } else {
+      // Portrait: fit within both width and height constraints
+      scale = Math.min(window.innerWidth / W, availableHeight / H, 8);
+      scale = Math.max(0.5, scale);
+    }
 
-    canvas.style.width = `${W * safeScale}px`;
-    canvas.style.height = `${H * safeScale}px`;
+    canvas.style.width = `${W * scale}px`;
+    canvas.style.height = `${H * scale}px`;
     canvas.style.maxWidth = '100vw';
     canvas.style.maxHeight = `${availableHeight}px`;
   } else {
